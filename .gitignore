@@ -1,0 +1,28 @@
+# 依存パッケージ
+node_modules
+
+# ビルド成果物
+dist
+dist-ssr
+*.local
+
+# 環境変数（Supabaseの鍵などの機密情報を含むため除外）
+.env
+.env.*
+!.env.example
+
+# エディタ・OS関連
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ログ
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
