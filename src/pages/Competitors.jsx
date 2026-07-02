@@ -24,6 +24,10 @@ export default function Competitors() {
   const [form, setForm] = useState(EMPTY_FORM)
   const [editingId, setEditingId] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+  const [ocrFile, setOcrFile] = useState(null)
+  const [ocrRunning, setOcrRunning] = useState(false)
+  const [ocrCandidates, setOcrCandidates] = useState([])
+  const [ocrImagePath, setOcrImagePath] = useState(null)
 
   // 選択中の店舗の競合店一覧をSupabaseから取得する
   const fetchCompetitors = useCallback(async () => {
@@ -63,6 +67,54 @@ export default function Competitors() {
   const resetForm = () => {
     setForm(EMPTY_FORM)
     setEditingId(null)
+    setOcrFile(null)
+    setOcrCandidates([])
+    setOcrImagePath(null)
+  }
+
+  // チラシ画像をStorageにアップロードし、Edge Function経由でOCRを実行する
+  const handleOcrRun = async () => {
+    if (!ocrFile) return
+    setOcrRunning(true)
+    setErrorMessage('')
+    setOcrCandidates([])
+
+    const path = `${storeName}/${Date.now()}-${ocrFile.name}`
+    const { error: uploadError } = await supabase.storage
+      .from('flyer-images')
+      .upload(path, ocrFile)
+
+    if (uploadError) {
+      setErrorMessage(uploadError.message)
+      setOcrRunning(false)
+      return
+    }
+
+    setOcrImagePath(path)
+
+    const { data, error } = await supabase.functions.invoke('ocr-flyer', {
+      body: { path },
+    })
+
+    if (error) {
+      setErrorMessage(error.message)
+    } else if (data.candidates.length === 0) {
+      setErrorMessage('画像から商品情報を読み取れませんでした。手動で入力してください。')
+    } else {
+      setOcrCandidates(data.candidates)
+    }
+
+    setOcrRunning(false)
+  }
+
+  // OCR候補の選択でフォームへ自動入力する
+  const handleApplyCandidate = (candidate) => {
+    setForm((prev) => ({
+      ...prev,
+      product_name: candidate.product_name,
+      origin_or_maker: candidate.origin_or_maker,
+      price: candidate.price,
+    }))
   }
 
   // 新規登録・編集フォームの送信処理（INSERT / UPDATE）
@@ -79,6 +131,7 @@ export default function Competitors() {
       product_name: form.product_name,
       origin_or_maker: form.origin_or_maker,
       price: form.price === '' ? null : Number(form.price),
+      flyer_image_path: ocrImagePath,
     }
 
     const { error } = editingId
@@ -137,6 +190,43 @@ export default function Competitors() {
       <h1>競合店チラシ一覧</h1>
 
       {errorMessage && <p className="auth-error">{errorMessage}</p>}
+
+      <div className="ocr-panel">
+        <h2>チラシ画像から読み取る</h2>
+        <div className="ocr-panel-controls">
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => setOcrFile(e.target.files?.[0] ?? null)}
+          />
+          <button
+            type="button"
+            onClick={handleOcrRun}
+            disabled={!ocrFile || ocrRunning}
+          >
+            {ocrRunning ? '読み取り中...' : '画像から読み取る'}
+          </button>
+        </div>
+
+        {ocrCandidates.length > 0 && (
+          <ul className="ocr-candidate-list">
+            {ocrCandidates.map((candidate, index) => (
+              <li key={index}>
+                <span>
+                  {candidate.origin_or_maker} {candidate.product_name}{' '}
+                  {candidate.price}円
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleApplyCandidate(candidate)}
+                >
+                  この内容を使う
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       <form className="competitor-form" onSubmit={handleSubmit}>
         <h2>{editingId ? '競合店情報の編集' : '競合店の新規登録'}</h2>

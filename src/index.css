@@ -144,6 +144,67 @@ body {
   margin: 0 0 16px;
 }
 
+.ocr-panel {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.ocr-panel h2 {
+  margin: 0 0 12px;
+  font-size: 16px;
+}
+
+.ocr-panel-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ocr-panel-controls button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background-color: #2563eb;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.ocr-panel-controls button:disabled {
+  background-color: #9aa5b1;
+  cursor: not-allowed;
+}
+
+.ocr-candidate-list {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ocr-candidate-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f4f5f7;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.ocr-candidate-list button {
+  padding: 6px 10px;
+  border: 1px solid #cbd2d9;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+
 .competitor-form {
   background: #ffffff;
   border-radius: 12px;

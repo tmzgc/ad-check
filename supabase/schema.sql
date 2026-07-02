@@ -11,9 +11,14 @@ create table if not exists public.competitors (
   product_name text, -- 商品名
   origin_or_maker text, -- 産地名もしくはメーカー名
   price numeric, -- 価格（本体価格）
+  flyer_image_path text, -- OCRに使用したチラシ画像のStorageパス
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- 既存テーブルに対する追加（初回作成時はcreate tableで既に列があるため影響なし）
+alter table public.competitors
+  add column if not exists flyer_image_path text;
 
 -- 店舗ごとの一覧表示を高速化するためのインデックス
 create index if not exists competitors_store_name_idx
@@ -68,3 +73,30 @@ create policy "competitors_delete_authenticated"
   for delete
   to authenticated
   using (true);
+
+-- OCR用にアップロードするチラシ画像を保存するStorageバケット（非公開）
+insert into storage.buckets (id, name, public)
+values ('flyer-images', 'flyer-images', false)
+on conflict (id) do nothing;
+
+-- ログイン済みユーザー（チームメンバー）であればアップロード・閲覧・削除を許可する
+drop policy if exists "flyer_images_select_authenticated" on storage.objects;
+create policy "flyer_images_select_authenticated"
+  on storage.objects
+  for select
+  to authenticated
+  using (bucket_id = 'flyer-images');
+
+drop policy if exists "flyer_images_insert_authenticated" on storage.objects;
+create policy "flyer_images_insert_authenticated"
+  on storage.objects
+  for insert
+  to authenticated
+  with check (bucket_id = 'flyer-images');
+
+drop policy if exists "flyer_images_delete_authenticated" on storage.objects;
+create policy "flyer_images_delete_authenticated"
+  on storage.objects
+  for delete
+  to authenticated
+  using (bucket_id = 'flyer-images');
