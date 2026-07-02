@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
 // ログイン後に表示する店舗選択画面
@@ -7,11 +8,13 @@ const STORE_OPTIONS = ['本店', '駅前店', '郊外店']
 
 export default function StoreSelect() {
   const { user, signOut } = useAuth()
+  const navigate = useNavigate()
   const [selectedStore, setSelectedStore] = useState('')
 
   const handleSubmit = (event) => {
     event.preventDefault()
-    // TODO: 選択した店舗をもとにチラシチェック画面へ遷移する処理を実装する
+    // 選択した店舗をもとに競合店チラシ一覧画面へ遷移する
+    navigate('/competitors', { state: { storeName: selectedStore } })
   }
 
   return (

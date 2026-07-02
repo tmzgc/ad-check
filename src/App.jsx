@@ -3,6 +3,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import Login from './pages/Login'
 import StoreSelect from './pages/StoreSelect'
+import Competitors from './pages/Competitors'
 
 export default function App() {
   return (
@@ -14,6 +15,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <StoreSelect />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/competitors"
+          element={
+            <ProtectedRoute>
+              <Competitors />
             </ProtectedRoute>
           }
         />
