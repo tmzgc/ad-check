@@ -6,6 +6,9 @@ dist
 dist-ssr
 *.local
 
+# Vercel CLIのローカル設定
+.vercel
+
 # 環境変数（Supabaseの鍵などの機密情報を含むため除外）
 .env
 .env.*
