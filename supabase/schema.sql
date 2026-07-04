@@ -1,6 +1,67 @@
 -- ご近所チラシチェックアプリ用テーブル
 -- Supabaseダッシュボードの SQL Editor で実行してください（再実行しても安全です）。
 
+-- 更新時にupdated_atを自動更新する関数（各テーブルのトリガーより先に定義する）
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+-- 場所（ユーザーが自分専用に登録する自宅・職場・最寄り駅などの名称）
+create table if not exists public.locations (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  name text not null, -- 場所の名称（例: 自宅、職場、最寄り駅）
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists locations_user_id_idx
+  on public.locations (user_id);
+
+drop trigger if exists set_locations_updated_at on public.locations;
+create trigger set_locations_updated_at
+  before update on public.locations
+  for each row
+  execute function public.set_updated_at();
+
+alter table public.locations enable row level security;
+
+-- 場所は登録した本人のみ閲覧・編集・削除できる（チーム共有ではない）
+drop policy if exists "locations_select_own" on public.locations;
+create policy "locations_select_own"
+  on public.locations
+  for select
+  to authenticated
+  using (auth.uid() = user_id);
+
+drop policy if exists "locations_insert_own" on public.locations;
+create policy "locations_insert_own"
+  on public.locations
+  for insert
+  to authenticated
+  with check (auth.uid() = user_id);
+
+drop policy if exists "locations_update_own" on public.locations;
+create policy "locations_update_own"
+  on public.locations
+  for update
+  to authenticated
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+drop policy if exists "locations_delete_own" on public.locations;
+create policy "locations_delete_own"
+  on public.locations
+  for delete
+  to authenticated
+  using (auth.uid() = user_id);
+
 -- 登録店（自社店舗ごとに登録するチラシ掲載サイトの情報）
 create table if not exists public.competitors (
   id uuid primary key default gen_random_uuid(),
@@ -56,17 +117,6 @@ create index if not exists competitor_products_competitor_id_idx
 
 create index if not exists competitor_products_product_name_idx
   on public.competitor_products (product_name);
-
--- 更新時にupdated_atを自動更新する関数
-create or replace function public.set_updated_at()
-returns trigger
-language plpgsql
-as $$
-begin
-  new.updated_at = now();
-  return new;
-end;
-$$;
 
 drop trigger if exists set_competitors_updated_at on public.competitors;
 create trigger set_competitors_updated_at

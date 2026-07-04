@@ -21,8 +21,7 @@ body {
   color: var(--color-text);
 }
 
-.auth-page,
-.store-page {
+.auth-page {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -31,8 +30,7 @@ body {
   padding: 24px;
 }
 
-.auth-form,
-.store-form {
+.auth-form {
   width: 100%;
   max-width: 360px;
   background: var(--color-card);
@@ -56,22 +54,19 @@ body {
   color: var(--color-accent-dark);
 }
 
-.auth-form h2,
-.store-form h1 {
+.auth-form h2 {
   margin: 0 0 12px;
   text-align: center;
   color: var(--color-text);
 }
 
-.auth-form label,
-.store-form label {
+.auth-form label {
   align-self: flex-start;
   font-size: 14px;
   margin-top: 8px;
 }
 
-.auth-form input,
-.store-form select {
+.auth-form input {
   width: 100%;
   padding: 10px 14px;
   border: 2px solid var(--color-border);
@@ -81,14 +76,12 @@ body {
   background: #fffdfd;
 }
 
-.auth-form input:focus,
-.store-form select:focus {
+.auth-form input:focus {
   outline: none;
   border-color: var(--color-accent);
 }
 
-.auth-form button[type='submit'],
-.store-form button[type='submit'] {
+.auth-form button[type='submit'] {
   width: 100%;
   margin-top: 16px;
   padding: 12px 12px;
@@ -102,13 +95,11 @@ body {
   cursor: pointer;
 }
 
-.auth-form button[type='submit']:hover:not(:disabled),
-.store-form button[type='submit']:hover:not(:disabled) {
+.auth-form button[type='submit']:hover:not(:disabled) {
   background-color: var(--color-accent-dark);
 }
 
-.auth-form button[type='submit']:disabled,
-.store-form button[type='submit']:disabled {
+.auth-form button[type='submit']:disabled {
   background-color: var(--color-disabled);
   cursor: not-allowed;
 }
@@ -134,10 +125,6 @@ body {
   font-size: 13px;
   margin: 4px 0 0;
   text-align: center;
-}
-
-.store-page {
-  width: 100%;
 }
 
 .store-header {
@@ -167,21 +154,44 @@ body {
   justify-content: center;
 }
 
-.competitors-page {
+.competitors-page,
+.locations-page {
   min-height: 100vh;
   padding: 24px;
   max-width: 960px;
   margin: 0 auto;
 }
 
-.competitors-page .store-header {
+.competitors-page .store-header,
+.locations-page .store-header {
   max-width: none;
 }
 
-.competitors-page h1 {
+.competitors-page h1,
+.locations-intro h1 {
   font-size: 22px;
-  margin: 0 0 16px;
+  margin: 8px 0 4px;
   color: var(--color-accent-dark);
+}
+
+.locations-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.locations-intro p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-text-soft);
+}
+
+.location-form {
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .ocr-panel {
