@@ -1,13 +1,24 @@
+:root {
+  --color-bg: #fff6f2;
+  --color-card: #ffffff;
+  --color-accent: #ff8fab;
+  --color-accent-dark: #f4678e;
+  --color-text: #6b4f4f;
+  --color-text-soft: #a8817e;
+  --color-border: #ffd9e4;
+  --color-muted-bg: #fff0f5;
+  --color-disabled: #f3c9d6;
+}
+
 * {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans',
-    'Noto Sans JP', sans-serif;
-  background-color: #f4f5f7;
-  color: #1f2933;
+  font-family: 'Zen Maru Gothic', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text);
 }
 
 .auth-page,
@@ -24,57 +35,81 @@ body {
 .store-form {
   width: 100%;
   max-width: 360px;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  background: var(--color-card);
+  border-radius: 24px;
+  box-shadow: 0 8px 24px rgba(255, 143, 171, 0.18);
   padding: 32px;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 8px;
 }
 
+.auth-mascot {
+  margin-bottom: 4px;
+}
+
 .auth-form h1 {
-  font-size: 18px;
+  font-size: 20px;
   margin: 0 0 4px;
   text-align: center;
-  color: #52606d;
+  color: var(--color-accent-dark);
 }
 
 .auth-form h2,
 .store-form h1 {
   margin: 0 0 12px;
   text-align: center;
+  color: var(--color-text);
 }
 
 .auth-form label,
 .store-form label {
+  align-self: flex-start;
   font-size: 14px;
   margin-top: 8px;
 }
 
 .auth-form input,
 .store-form select {
-  padding: 10px 12px;
-  border: 1px solid #cbd2d9;
-  border-radius: 6px;
+  width: 100%;
+  padding: 10px 14px;
+  border: 2px solid var(--color-border);
+  border-radius: 12px;
   font-size: 14px;
+  font-family: inherit;
+  background: #fffdfd;
+}
+
+.auth-form input:focus,
+.store-form select:focus {
+  outline: none;
+  border-color: var(--color-accent);
 }
 
 .auth-form button[type='submit'],
 .store-form button[type='submit'] {
+  width: 100%;
   margin-top: 16px;
-  padding: 10px 12px;
+  padding: 12px 12px;
   border: none;
-  border-radius: 6px;
-  background-color: #2563eb;
+  border-radius: 999px;
+  background-color: var(--color-accent);
   color: #fff;
+  font-family: inherit;
   font-size: 15px;
+  font-weight: 700;
   cursor: pointer;
+}
+
+.auth-form button[type='submit']:hover:not(:disabled),
+.store-form button[type='submit']:hover:not(:disabled) {
+  background-color: var(--color-accent-dark);
 }
 
 .auth-form button[type='submit']:disabled,
 .store-form button[type='submit']:disabled {
-  background-color: #9aa5b1;
+  background-color: var(--color-disabled);
   cursor: not-allowed;
 }
 
@@ -82,21 +117,23 @@ body {
   margin-top: 12px;
   background: none;
   border: none;
-  color: #2563eb;
+  color: var(--color-accent-dark);
+  font-family: inherit;
   font-size: 13px;
   cursor: pointer;
 }
 
 .auth-error {
-  color: #d64545;
+  color: #e0577b;
   font-size: 13px;
   margin: 4px 0 0;
 }
 
 .auth-info {
-  color: #2563eb;
+  color: var(--color-accent-dark);
   font-size: 13px;
   margin: 4px 0 0;
+  text-align: center;
 }
 
 .store-page {
@@ -114,10 +151,12 @@ body {
 }
 
 .store-header button {
-  padding: 6px 12px;
-  border: 1px solid #cbd2d9;
-  border-radius: 6px;
+  padding: 8px 14px;
+  border: 2px solid var(--color-border);
+  border-radius: 999px;
   background: #fff;
+  font-family: inherit;
+  color: var(--color-text);
   cursor: pointer;
 }
 
@@ -140,14 +179,15 @@ body {
 }
 
 .competitors-page h1 {
-  font-size: 20px;
+  font-size: 22px;
   margin: 0 0 16px;
+  color: var(--color-accent-dark);
 }
 
 .ocr-panel {
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  background: var(--color-card);
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(255, 143, 171, 0.12);
   padding: 24px;
   margin-bottom: 24px;
 }
@@ -155,6 +195,7 @@ body {
 .ocr-panel h2 {
   margin: 0 0 12px;
   font-size: 16px;
+  color: var(--color-text);
 }
 
 .ocr-panel-controls {
@@ -164,17 +205,18 @@ body {
 }
 
 .ocr-panel-controls button {
-  padding: 8px 16px;
+  padding: 8px 20px;
   border: none;
-  border-radius: 6px;
-  background-color: #2563eb;
+  border-radius: 999px;
+  background-color: var(--color-accent);
   color: #fff;
+  font-family: inherit;
   font-size: 14px;
   cursor: pointer;
 }
 
 .ocr-panel-controls button:disabled {
-  background-color: #9aa5b1;
+  background-color: var(--color-disabled);
   cursor: not-allowed;
 }
 
@@ -192,23 +234,24 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 8px 12px;
-  background: #f4f5f7;
-  border-radius: 6px;
+  background: var(--color-muted-bg);
+  border-radius: 12px;
   font-size: 13px;
 }
 
 .ocr-candidate-list button {
-  padding: 6px 10px;
-  border: 1px solid #cbd2d9;
-  border-radius: 6px;
+  padding: 6px 14px;
+  border: 2px solid var(--color-border);
+  border-radius: 999px;
   background: #fff;
+  font-family: inherit;
   cursor: pointer;
 }
 
 .competitor-form {
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  background: var(--color-card);
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(255, 143, 171, 0.12);
   padding: 24px;
   margin-bottom: 24px;
   display: grid;
@@ -220,6 +263,7 @@ body {
   grid-column: 1 / -1;
   margin: 0 0 8px;
   font-size: 16px;
+  color: var(--color-text);
 }
 
 .competitor-form label {
@@ -228,10 +272,16 @@ body {
 }
 
 .competitor-form input {
-  padding: 8px 10px;
-  border: 1px solid #cbd2d9;
-  border-radius: 6px;
+  padding: 8px 12px;
+  border: 2px solid var(--color-border);
+  border-radius: 10px;
   font-size: 14px;
+  font-family: inherit;
+}
+
+.competitor-form input:focus {
+  outline: none;
+  border-color: var(--color-accent);
 }
 
 .competitor-form-actions {
@@ -243,39 +293,46 @@ body {
 }
 
 .competitor-form-actions button[type='submit'] {
-  padding: 10px 20px;
+  padding: 10px 24px;
   border: none;
-  border-radius: 6px;
-  background-color: #2563eb;
+  border-radius: 999px;
+  background-color: var(--color-accent);
   color: #fff;
+  font-family: inherit;
   font-size: 14px;
+  font-weight: 700;
   cursor: pointer;
 }
 
+.competitor-form-actions button[type='submit']:hover:not(:disabled) {
+  background-color: var(--color-accent-dark);
+}
+
 .competitor-form-actions button[type='submit']:disabled {
-  background-color: #9aa5b1;
+  background-color: var(--color-disabled);
   cursor: not-allowed;
 }
 
 .competitor-table {
   width: 100%;
   border-collapse: collapse;
-  background: #fff;
-  border-radius: 12px;
+  background: var(--color-card);
+  border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 24px rgba(255, 143, 171, 0.12);
 }
 
 .competitor-table th,
 .competitor-table td {
-  padding: 10px 12px;
-  border-bottom: 1px solid #e4e7eb;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--color-muted-bg);
   font-size: 13px;
   text-align: left;
 }
 
 .competitor-table th {
-  background-color: #f4f5f7;
+  background-color: var(--color-muted-bg);
+  color: var(--color-accent-dark);
 }
 
 .competitor-table-actions {
@@ -285,9 +342,10 @@ body {
 }
 
 .competitor-table-actions button {
-  padding: 6px 10px;
-  border: 1px solid #cbd2d9;
-  border-radius: 6px;
+  padding: 6px 12px;
+  border: 2px solid var(--color-border);
+  border-radius: 999px;
   background: #fff;
+  font-family: inherit;
   cursor: pointer;
 }

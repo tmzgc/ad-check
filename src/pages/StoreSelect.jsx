@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import MascotIllustration from '../components/MascotIllustration'
 
 // ログイン後に表示する店舗選択画面
 // TODO: 店舗一覧はSupabaseのテーブルから取得するように拡張する
@@ -27,6 +28,7 @@ export default function StoreSelect() {
       </header>
 
       <form className="store-form" onSubmit={handleSubmit}>
+        <MascotIllustration size={100} className="auth-mascot" />
         <h1>店舗選択</h1>
         <label htmlFor="store">確認する店舗を選択してください</label>
         <select

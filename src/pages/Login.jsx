@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import MascotIllustration from '../components/MascotIllustration'
 
 // ログイン・会員登録を行う画面（未ログイン時のみ表示）
 export default function Login() {
@@ -40,7 +41,8 @@ export default function Login() {
   return (
     <div className="auth-page">
       <form className="auth-form" onSubmit={handleSubmit}>
-        <h1>競合店チラシチェック</h1>
+        <MascotIllustration size={120} className="auth-mascot" />
+        <h1>ご近所チラシチェック</h1>
         <h2>{mode === 'signin' ? 'ログイン' : '会員登録'}</h2>
 
         <label htmlFor="email">メールアドレス</label>
