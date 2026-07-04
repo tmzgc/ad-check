@@ -14,7 +14,7 @@ export default function StoreSelect() {
 
   const handleSubmit = (event) => {
     event.preventDefault()
-    // 選択した店舗をもとに競合店チラシ一覧画面へ遷移する
+    // 選択した店舗をもとに登録店チラシ一覧画面へ遷移する
     navigate('/competitors', { state: { storeName: selectedStore } })
   }
 

@@ -29,7 +29,7 @@ export default function Competitors() {
   const [ocrCandidates, setOcrCandidates] = useState([])
   const [ocrImagePath, setOcrImagePath] = useState(null)
 
-  // 選択中の店舗の競合店一覧をSupabaseから取得する
+  // 選択中の店舗の登録店一覧をSupabaseから取得する
   const fetchCompetitors = useCallback(async () => {
     setLoading(true)
     setErrorMessage('')
@@ -162,7 +162,7 @@ export default function Competitors() {
 
   // 一覧の「削除」ボタン押下時の削除処理（DELETE）
   const handleDelete = async (id) => {
-    const confirmed = window.confirm('この競合店情報を削除しますか？')
+    const confirmed = window.confirm('この登録店情報を削除しますか？')
     if (!confirmed) return
 
     setErrorMessage('')
@@ -187,7 +187,7 @@ export default function Competitors() {
         </button>
       </header>
 
-      <h1>競合店チラシ一覧</h1>
+      <h1>登録店チラシ一覧</h1>
 
       {errorMessage && <p className="auth-error">{errorMessage}</p>}
 
@@ -229,9 +229,9 @@ export default function Competitors() {
       </div>
 
       <form className="competitor-form" onSubmit={handleSubmit}>
-        <h2>{editingId ? '競合店情報の編集' : '競合店の新規登録'}</h2>
+        <h2>{editingId ? '登録店情報の編集' : '登録店の新規登録'}</h2>
 
-        <label htmlFor="competitor_name">競合店名</label>
+        <label htmlFor="competitor_name">登録店名</label>
         <input
           id="competitor_name"
           name="competitor_name"
@@ -302,7 +302,7 @@ export default function Competitors() {
         <table className="competitor-table">
           <thead>
             <tr>
-              <th>競合店名</th>
+              <th>登録店名</th>
               <th>住所</th>
               <th>チラシURL</th>
               <th>商品名</th>
@@ -347,7 +347,7 @@ export default function Competitors() {
             ))}
             {competitors.length === 0 && (
               <tr>
-                <td colSpan={7}>登録されている競合店情報はありません。</td>
+                <td colSpan={7}>登録店の情報はまだありません。</td>
               </tr>
             )}
           </tbody>
