@@ -219,3 +219,26 @@ create policy "flyer_images_delete_authenticated"
   for delete
   to authenticated
   using (bucket_id = 'flyer-images');
+
+-- サインアップ制限: 2026-07-06 07:41:07 UTC（設定時点から48時間後）以降は
+-- 会社のメールドメイン（@mg-shop.co.jp）以外での新規会員登録を拒否する。
+-- 既存ユーザーのログインには影響しない（新規INSERT時のみチェック）。
+-- ドメインや発効日時を変更したい場合は、この関数を書き換えて再実行してください。
+create or replace function public.restrict_signup_by_email_domain()
+returns trigger
+language plpgsql
+as $$
+begin
+  if now() >= '2026-07-06 07:41:07+00'::timestamptz
+     and new.email !~* '@mg-shop\.co\.jp$' then
+    raise exception 'このアプリは招待制です。登録可能なメールアドレスではありません。';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists restrict_signup_by_email_domain on auth.users;
+create trigger restrict_signup_by_email_domain
+  before insert on auth.users
+  for each row
+  execute function public.restrict_signup_by_email_domain();
