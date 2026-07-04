@@ -27,6 +27,7 @@ export default function Competitors() {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
+  const [infoMessage, setInfoMessage] = useState('')
 
   const [storeForm, setStoreForm] = useState(EMPTY_STORE_FORM)
   const [editingStoreId, setEditingStoreId] = useState(null)
@@ -36,10 +37,9 @@ export default function Competitors() {
   const [editingProductId, setEditingProductId] = useState(null)
   const [productSubmitting, setProductSubmitting] = useState(false)
 
+  const [ocrCompetitorId, setOcrCompetitorId] = useState('')
   const [ocrFile, setOcrFile] = useState(null)
   const [ocrRunning, setOcrRunning] = useState(false)
-  const [ocrCandidates, setOcrCandidates] = useState([])
-  const [ocrImagePath, setOcrImagePath] = useState(null)
 
   // 選択中の店舗の登録店一覧をSupabaseから取得する
   const fetchCompetitors = useCallback(async () => {
@@ -119,9 +119,6 @@ export default function Competitors() {
   const resetProductForm = () => {
     setProductForm(EMPTY_PRODUCT_FORM)
     setEditingProductId(null)
-    setOcrFile(null)
-    setOcrCandidates([])
-    setOcrImagePath(null)
   }
 
   // 登録店の新規登録・編集の送信処理（INSERT / UPDATE）
@@ -177,12 +174,13 @@ export default function Competitors() {
     }
   }
 
-  // チラシ画像をStorageにアップロードし、Edge Function経由でOCRを実行する
+  // チラシ画像をStorageにアップロードし、Edge Function経由でOCRを実行して
+  // 読み取れた商品情報をそのまま自動登録する（間違っていた場合は一覧から編集で修正する）
   const handleOcrRun = async () => {
-    if (!ocrFile) return
+    if (!ocrFile || !ocrCompetitorId) return
     setOcrRunning(true)
     setErrorMessage('')
-    setOcrCandidates([])
+    setInfoMessage('')
 
     const path = `${storeName}/${Date.now()}-${ocrFile.name}`
     const { error: uploadError } = await supabase.storage
@@ -195,34 +193,47 @@ export default function Competitors() {
       return
     }
 
-    setOcrImagePath(path)
-
     const { data, error } = await supabase.functions.invoke('ocr-flyer', {
       body: { path },
     })
 
     if (error) {
       setErrorMessage(error.message)
-    } else if (data.candidates.length === 0) {
-      setErrorMessage('画像から商品情報を読み取れませんでした。手動で入力してください。')
-    } else {
-      setOcrCandidates(data.candidates)
+      setOcrRunning(false)
+      return
     }
 
-    setOcrRunning(false)
-  }
+    if (data.candidates.length === 0) {
+      setErrorMessage('画像から商品情報を読み取れませんでした。手動で登録してください。')
+      setOcrRunning(false)
+      return
+    }
 
-  // OCR候補の選択で商品フォームへ自動入力する（登録店は別途選択する）
-  const handleApplyCandidate = (candidate) => {
-    setProductForm((prev) => ({
-      ...prev,
+    const rows = data.candidates.map((candidate) => ({
+      competitor_id: ocrCompetitorId,
       product_name: candidate.product_name,
       origin_or_maker: candidate.origin_or_maker,
       price: candidate.price,
+      flyer_image_path: path,
     }))
+
+    const { error: insertError } = await supabase
+      .from('competitor_products')
+      .insert(rows)
+
+    if (insertError) {
+      setErrorMessage(insertError.message)
+    } else {
+      setInfoMessage(
+        `${rows.length}件の商品情報を自動登録しました。内容を確認し、間違っていれば下の一覧から編集してください。`,
+      )
+      setOcrFile(null)
+      await fetchProducts()
+    }
+    setOcrRunning(false)
   }
 
-  // 商品価格情報の新規登録・編集の送信処理（INSERT / UPDATE）
+  // 商品価格情報の手動登録・編集の送信処理（INSERT / UPDATE）
   const handleProductSubmit = async (event) => {
     event.preventDefault()
     setProductSubmitting(true)
@@ -233,7 +244,6 @@ export default function Competitors() {
       product_name: productForm.product_name,
       origin_or_maker: productForm.origin_or_maker,
       price: productForm.price === '' ? null : Number(productForm.price),
-      flyer_image_path: ocrImagePath,
     }
 
     const { error } = editingProductId
@@ -260,8 +270,6 @@ export default function Competitors() {
       origin_or_maker: product.origin_or_maker ?? '',
       price: product.price ?? '',
     })
-    setOcrCandidates([])
-    setOcrFile(null)
   }
 
   const handleProductDelete = async (id) => {
@@ -296,6 +304,7 @@ export default function Competitors() {
       <h1>登録店チラシ一覧</h1>
 
       {errorMessage && <p className="auth-error">{errorMessage}</p>}
+      {infoMessage && <p className="auth-info">{infoMessage}</p>}
 
       {/* 登録店（店名・住所・チラシ掲載URL）の登録エリア */}
       <form className="competitor-form" onSubmit={handleStoreSubmit}>
@@ -396,9 +405,26 @@ export default function Competitors() {
         </table>
       )}
 
-      {/* 商品価格情報の登録エリア（将来的にはOCRで自動入力する想定） */}
+      {/* チラシ画像から商品価格情報を自動登録するエリア */}
       <div className="ocr-panel">
-        <h2>商品価格を登録する</h2>
+        <h2>チラシ画像から自動登録する</h2>
+        <p className="ocr-panel-note">
+          読み取った商品名・産地/メーカー名・価格はそのまま登録されます。誤りがあれば下の一覧から編集してください。
+        </p>
+
+        <label htmlFor="ocr_competitor_id">登録店</label>
+        <select
+          id="ocr_competitor_id"
+          value={ocrCompetitorId}
+          onChange={(e) => setOcrCompetitorId(e.target.value)}
+        >
+          <option value="">登録店を選択</option>
+          {competitors.map((competitor) => (
+            <option key={competitor.id} value={competitor.id}>
+              {competitor.competitor_name}
+            </option>
+          ))}
+        </select>
 
         <div className="ocr-panel-controls">
           <input
@@ -409,33 +435,19 @@ export default function Competitors() {
           <button
             type="button"
             onClick={handleOcrRun}
-            disabled={!ocrFile || ocrRunning}
+            disabled={!ocrFile || !ocrCompetitorId || ocrRunning}
           >
-            {ocrRunning ? '読み取り中...' : 'チラシ画像から読み取る'}
+            {ocrRunning ? '読み取り中...' : '読み取って登録する'}
           </button>
         </div>
+      </div>
 
-        {ocrCandidates.length > 0 && (
-          <ul className="ocr-candidate-list">
-            {ocrCandidates.map((candidate, index) => (
-              <li key={index}>
-                <span>
-                  {candidate.origin_or_maker} {candidate.product_name}{' '}
-                  {candidate.price}円
-                </span>
-                <button
-                  type="button"
-                  onClick={() => handleApplyCandidate(candidate)}
-                >
-                  この内容を使う
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-
+      {/* 商品価格情報の手動登録・編集エリア */}
+      <div className="ocr-panel">
         <form className="competitor-form" onSubmit={handleProductSubmit}>
-          <h2>{editingProductId ? '商品価格情報の編集' : '商品価格の新規登録'}</h2>
+          <h2>
+            {editingProductId ? '商品価格情報の編集' : '商品価格を手動で登録する'}
+          </h2>
 
           <label htmlFor="competitor_id">登録店</label>
           <select
