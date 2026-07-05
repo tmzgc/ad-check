@@ -5,9 +5,9 @@
 Supabaseダッシュボードの **SQL Editor** で [schema.sql](schema.sql) を実行する。
 既存環境に対しても再実行可能（`if not exists` / `or replace` で冪等）。
 
-## 2. OCR機能（Google Cloud Vision）のセットアップ
+## 2. OCR機能（Claude API）のセットアップ
 
-1. Google Cloud ConsoleでVision APIを有効化し、APIキーを発行する。
+1. Anthropicコンソールで APIキーを発行する。
 2. ローカルにSupabase CLIをインストール、またはこのプロジェクトでは `npx supabase` を利用する。
 3. Supabaseにログインし、このプロジェクトとリンクする。
 
@@ -16,10 +16,10 @@ Supabaseダッシュボードの **SQL Editor** で [schema.sql](schema.sql) を
    npx supabase link --project-ref kkgowntdofwevpxmykzl
    ```
 
-4. Vision APIキーをEdge Functionのシークレットとして登録する（**チャットや.envには書かず、ここで直接設定する**）。
+4. Claude APIキーをEdge Functionのシークレットとして登録する（**チャットや.envには書かず、ここで直接設定する**）。
 
    ```bash
-   npx supabase secrets set GOOGLE_VISION_API_KEY=<取得したAPIキー>
+   npx supabase secrets set ANTHROPIC_API_KEY=<取得したAPIキー>
    ```
 
 5. Edge Functionをデプロイする。
@@ -50,8 +50,8 @@ Supabaseダッシュボードの **SQL Editor** で [schema.sql](schema.sql) を
 
 ## 補足
 
-- OCRの抽出ロジックは単純な正規表現（`◯◯産　商品名　価格円` のパターン）によるヒューリスティックです。
-  レイアウトによっては正しく抽出できない場合があるため、保存後に一覧の内容を確認してください。
+- OCRの抽出はClaude API(`claude-sonnet-5`)による画像認識で行っており、商品名・産地/メーカー名・価格をJSON Schemaで
+  構造化して受け取っています。読み取り精度は高いですが、レイアウトによっては誤りが出ることもあるため、保存後に一覧の内容を確認してください。
 - チラシ画像は非公開のStorageバケット（`flyer-images`）に保存され、ログイン済みユーザーのみアクセスできます。
 - データは`locations`（ユーザーごとの場所。本人のみ閲覧・編集可）、`competitors`（登録店：店名・住所・URL）、
   `competitor_products`（商品価格情報：商品名・産地/メーカー・価格）の3テーブルに分かれており、

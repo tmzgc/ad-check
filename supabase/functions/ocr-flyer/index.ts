@@ -1,13 +1,13 @@
-// チラシ画像をOCRし、商品名・産地/メーカー名・価格の候補を抽出するEdge Function
+// チラシ画像をClaude APIで解析し、商品名・産地/メーカー名・価格の候補を抽出するEdge Function
 //
 // 事前準備（Supabaseダッシュボード or CLIで実施）:
-//   1. Google Cloud ConsoleでVision APIを有効化し、APIキーを発行する
-//   2. `supabase secrets set GOOGLE_VISION_API_KEY=<取得したキー>` でシークレット登録する
+//   1. Anthropicコンソールで APIキーを発行する
+//   2. `supabase secrets set ANTHROPIC_API_KEY=<取得したキー>` でシークレット登録する
 //      （このキーはEdge Function内でのみ使用し、フロントエンドには一切渡さない）
 //   3. `supabase functions deploy ocr-flyer` でデプロイする
 //
 // リクエスト: POST { path: string } ※flyer-imagesバケット内のStorageパス
-// レスポンス: { rawText: string, candidates: Array<{ origin_or_maker, product_name, price }> }
+// レスポンス: { candidates: Array<{ origin_or_maker, product_name, price }> }
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
@@ -16,40 +16,39 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// OCRで抽出した1行のテキストから「産地」「商品名」「価格」を推定する
-// 想定フォーマット例: "北海道産　玉ねぎ　198円"
-function extractCandidates(rawText) {
-  const priceLinePattern = /(\d{1,6})\s*円/
-  const originPattern = /([^\s　]{2,10}産)/
+const MODEL = 'claude-sonnet-5'
 
-  const lines = rawText
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0)
-
-  const candidates = []
-
-  for (const line of lines) {
-    const priceMatch = line.match(priceLinePattern)
-    if (!priceMatch) continue
-
-    const originMatch = line.match(originPattern)
-    let productName = line
-      .replace(priceMatch[0], '')
-      .replace(originMatch?.[0] ?? '', '')
-      .trim()
-
-    if (!productName) continue
-
-    candidates.push({
-      origin_or_maker: originMatch?.[1] ?? '',
-      product_name: productName,
-      price: Number(priceMatch[1]),
-    })
-  }
-
-  return candidates
+const CANDIDATE_SCHEMA = {
+  type: 'object',
+  properties: {
+    candidates: {
+      description: 'チラシに掲載されている商品ごとの情報一覧。',
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          origin_or_maker: {
+            description: '産地名またはメーカー名。読み取れない場合はnull。',
+            anyOf: [{ type: 'string' }, { type: 'null' }],
+          },
+          product_name: { type: 'string', description: '商品名' },
+          price: { type: 'integer', description: '価格(円、本体価格の数値のみ)' },
+        },
+        required: ['origin_or_maker', 'product_name', 'price'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['candidates'],
+  additionalProperties: false,
 }
+
+const SYSTEM_PROMPT = `あなたはスーパーのチラシ画像を読み取るアシスタントです。
+画像に掲載されている商品ごとに、産地名またはメーカー名・商品名・価格を読み取ってください。
+価格はチラシに印字されている数値をそのまま整数(円)で読み取ってください。
+数字は0とO、1と7、3と8、6とB、5とSなど読み間違えやすいため、1つずつ注意して正確に読み取ってください。
+産地名・メーカー名が記載されていない商品はnullにしてください。
+商品情報が1件も読み取れない場合はcandidatesを空配列にしてください。`
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -65,10 +64,10 @@ Deno.serve(async (req) => {
       })
     }
 
-    const visionApiKey = Deno.env.get('GOOGLE_VISION_API_KEY')
-    if (!visionApiKey) {
+    const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY')
+    if (!anthropicApiKey) {
       return new Response(
-        JSON.stringify({ error: 'GOOGLE_VISION_API_KEYが未設定です' }),
+        JSON.stringify({ error: 'ANTHROPIC_API_KEYが未設定です' }),
         { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
       )
     }
@@ -94,31 +93,64 @@ Deno.serve(async (req) => {
     const base64Image = btoa(
       new Uint8Array(arrayBuffer).reduce((acc, byte) => acc + String.fromCharCode(byte), ''),
     )
+    const mediaType = fileData.type || 'image/jpeg'
 
-    const visionResponse = await fetch(
-      `https://vision.googleapis.com/v1/images:annotate?key=${visionApiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          requests: [
-            {
-              image: { content: base64Image },
-              features: [{ type: 'TEXT_DETECTION' }],
-              imageContext: { languageHints: ['ja'] },
-            },
-          ],
-        }),
+    const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': anthropicApiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
       },
-    )
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: 8192,
+        system: SYSTEM_PROMPT,
+        output_config: {
+          format: { type: 'json_schema', schema: CANDIDATE_SCHEMA },
+        },
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'image',
+                source: { type: 'base64', media_type: mediaType, data: base64Image },
+              },
+              { type: 'text', text: 'このチラシ画像から商品情報を読み取ってください。' },
+            ],
+          },
+        ],
+      }),
+    })
 
-    const visionResult = await visionResponse.json()
-    const rawText =
-      visionResult.responses?.[0]?.fullTextAnnotation?.text ?? ''
+    const claudeResult = await claudeResponse.json()
 
-    const candidates = extractCandidates(rawText)
+    if (!claudeResponse.ok) {
+      return new Response(
+        JSON.stringify({ error: claudeResult.error?.message ?? 'Claude APIの呼び出しに失敗しました' }),
+        { status: 502, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+      )
+    }
 
-    return new Response(JSON.stringify({ rawText, candidates }), {
+    if (claudeResult.stop_reason === 'refusal') {
+      return new Response(JSON.stringify({ error: '画像の解析がAPI側で拒否されました' }), {
+        status: 502,
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      })
+    }
+
+    const textBlock = claudeResult.content?.find((block) => block.type === 'text')
+    if (!textBlock) {
+      return new Response(JSON.stringify({ error: '解析結果を取得できませんでした' }), {
+        status: 502,
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      })
+    }
+
+    const { candidates } = JSON.parse(textBlock.text)
+
+    return new Response(JSON.stringify({ candidates }), {
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
     })
   } catch (error) {
