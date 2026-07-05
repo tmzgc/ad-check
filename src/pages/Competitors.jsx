@@ -182,7 +182,8 @@ export default function Competitors() {
     setErrorMessage('')
     setInfoMessage('')
 
-    const path = `${storeName}/${Date.now()}-${ocrFile.name}`
+    // Supabase Storageのキーは日本語などの記号を含むと拒否されるため、URLエンコードして安全な文字列にする
+    const path = `${encodeURIComponent(storeName)}/${Date.now()}-${encodeURIComponent(ocrFile.name)}`
     const { error: uploadError } = await supabase.storage
       .from('flyer-images')
       .upload(path, ocrFile)
