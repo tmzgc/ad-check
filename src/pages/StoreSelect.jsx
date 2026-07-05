@@ -86,7 +86,7 @@ export default function StoreSelect() {
 
   // 選択した場所をもとに登録店チラシ一覧画面へ遷移する
   const handleSelect = (location) => {
-    navigate('/competitors', { state: { storeName: location.name } })
+    navigate('/competitors', { state: { storeName: location.name, locationId: location.id } })
   }
 
   return (

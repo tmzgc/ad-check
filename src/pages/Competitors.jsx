@@ -22,6 +22,7 @@ export default function Competitors() {
   const { user, signOut } = useAuth()
   const location = useLocation()
   const storeName = location.state?.storeName
+  const locationId = location.state?.locationId
 
   const [competitors, setCompetitors] = useState([])
   const [products, setProducts] = useState([])
@@ -182,8 +183,11 @@ export default function Competitors() {
     setErrorMessage('')
     setInfoMessage('')
 
-    // Supabase Storageのキーは日本語などの記号を含むと拒否されるため、URLエンコードして安全な文字列にする
-    const path = `${encodeURIComponent(storeName)}/${Date.now()}-${encodeURIComponent(ocrFile.name)}`
+    // Supabase Storageのキーは日本語を含むと拒否される(URLエンコードしても、サーバー側で
+    // デコードされた文字列がチェックされるため回避できない)ため、場所のID(UUID)と拡張子のみで
+    // 安全なパスを組み立てる。拡張子が取得できない場合はjpgを既定値とする。
+    const fileExtension = ocrFile.name.split('.').pop() || 'jpg'
+    const path = `${locationId}/${Date.now()}.${fileExtension}`
     const { error: uploadError } = await supabase.storage
       .from('flyer-images')
       .upload(path, ocrFile)
